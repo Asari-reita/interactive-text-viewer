@@ -1,0 +1,190 @@
+/* =========================================
+   Clean Paper (White/Gray) Theme
+   - 白とグレー基調で「文章が読みやすい」最優先
+   - すべての色はCSS変数で管理
+   ========================================= */
+
+/* ---- Theme Tokens ---- */
+:root{
+  /* 背景 */
+  --bg: #f6f7f9;              /* 全体背景（薄いグレー） */
+  --bg-2: #ffffff;            /* パネルの白 */
+
+  /* 文字 */
+  --ink: #111827;             /* 主要文字（gray-900） */
+  --ink-muted: #6b7280;       /* 補助文字（gray-500） */
+
+  /* 枠・影 */
+  --border: #e5e7eb;          /* 枠線（gray-200） */
+  --border-2: #d1d5db;        /* 入力枠（gray-300） */
+  --shadow: rgba(0,0,0,0.06); /* 影 */
+
+  /* アクセント（控えめ） */
+  --accent: #2563eb;          /* リンク/控えめ青（blue-600） */
+  --accent-bg: #f3f4f6;       /* ボタン背景（gray-100） */
+
+  /* 形/余白 */
+  --radius-xl: 18px;
+  --radius-lg: 14px;
+  --radius-md: 12px;
+  --gap: 14px;
+
+  /* テキスト選択 */
+  --mark: #fff3a3;            /* やさしい黄色 */
+}
+
+/* ---- Base ---- */
+*{ box-sizing:border-box }
+html, body, #app { height:100% }
+
+body{
+  margin:0;
+  color:var(--ink);
+  font:16px/1.7 system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans JP","Meiryo",sans-serif;
+  letter-spacing:.15px;
+  background: var(--bg);
+}
+
+/* 背景画像を使いたい場合（任意）
+   - public/InteractiveText back2.png に置いて
+   - URLは絶対パスで参照（WindowsのC:\...はNG）
+*/
+body.has-bg-image{
+  background:
+    url("/InteractiveText back2.png") top center / 1400px auto repeat-y,
+    var(--bg);
+}
+
+/* ---- Layout ---- */
+.container{
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 40px 18px 90px;
+  position: relative;
+}
+
+/* タイトル */
+.title{
+  margin: 8px 0 10px;
+  color: var(--ink);
+  font-size: clamp(26px, 4vw, 40px);
+  font-weight: 800;
+  letter-spacing: .2px;
+}
+
+.site-description{
+  font-size: 1.05rem;
+  color: var(--ink-muted);
+  margin: 0 0 22px;
+  line-height: 1.7;
+}
+
+/* ---- Shell ---- */
+.shell{
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 20px;
+  box-shadow: 0 12px 30px var(--shadow);
+}
+
+/* ピル（任意・控えめ） */
+.pill{
+  display:inline-block;
+  background: #111827;  /* 黒寄り */
+  color: #ffffff;
+  border-radius: 999px;
+  padding: .45em 1em;
+  font-weight: 700;
+  font-size: .9rem;
+}
+
+/* ---- Inner Panels ---- */
+.panel{
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+
+/* 入力欄など“強調したい白”も同じでOK（濃紺用の名残なので残す） */
+.panel--white{
+  background: var(--bg-2);
+  color: var(--ink);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+}
+
+/* レイアウトユーティリティ */
+.stack{ display:grid; gap: var(--gap); }
+.row{
+  display:grid;
+  gap: var(--gap);
+  grid-template-columns: 1fr;
+}
+
+/* ---- Fields ---- */
+.label{
+  color: var(--ink);
+  font-weight: 700;
+  font-size: .95rem;
+  margin-bottom: 10px;
+}
+
+input[type="file"]{
+  width:100%;
+  color: inherit;
+}
+
+.manual-input{
+  width:100%;
+  min-height: 180px;
+  padding: 12px 14px;
+  font-size: 1rem;
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius-md);
+  background: #ffffff;
+  color: var(--ink);
+  outline: none;
+}
+.manual-input:focus{
+  border-color: #9ca3af; /* gray-400 */
+  box-shadow: 0 0 0 3px rgba(156,163,175,0.25);
+}
+
+/* ---- Text / Definition ---- */
+.text-container{
+  line-height: 1.9;
+  min-height: 120px;
+  color: var(--ink);
+}
+
+/* 選択ハイライト（markを使う場合） */
+mark{
+  background: var(--mark);
+  border-radius: 6px;
+  padding: 0 .2em;
+}
+
+/* リンク類 */
+a{
+  color: var(--accent);
+}
+a:hover{
+  opacity: .9;
+}
+
+/* 出典など補助 */
+.source{
+  font-size: .9rem;
+  color: var(--ink-muted);
+}
+.source a{
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+/* 余白 */
+.shell > .stack{ margin-top: 14px; }
