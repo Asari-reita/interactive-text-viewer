@@ -188,3 +188,29 @@ a:hover{
 
 /* 余白 */
 .shell > .stack{ margin-top: 14px; }
+
+/* =========================
+   Mobile tweaks
+   ========================= */
+@media (max-width: 640px){
+  .container{
+    padding: 22px 12px 120px; /* 下固定があるので下余白少し増やす */
+  }
+
+  .title{
+    font-size: 28px;
+    line-height: 1.15;
+  }
+
+  .site-description{
+    font-size: 0.98rem;
+    margin-bottom: 16px;
+  }
+
+  .shell{
+    padding: 12px;            /* 20px → 12px */
+    border-radius: 16px;      /* 少し小さく */
+    overflow: hidden; 
+
+  }
+}

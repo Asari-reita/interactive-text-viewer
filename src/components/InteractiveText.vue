@@ -39,8 +39,8 @@
 
       <div class="row">
         <div class="row-label">本文幅</div>
-        <input type="range" min="520" max="920" step="20" v-model.number="contentWidth" />
-        <div class="row-val">{{ contentWidth }}px</div>
+        <input type="range"min="320":max="maxContentWidth"step="20"v-model.number="contentWidth"/>
+<div class="row-val">{{ contentWidth }}px</div>
       </div>
 
       <!-- 表示モード：改行維持 / 横幅いっぱい -->
@@ -70,10 +70,12 @@
 
     <!-- ===== 下：本文（選択で解説） ===== -->
     <section
-      class="panel text-container"
-      :style="readerStyle"
-      @mouseup="handleSelection"
-    >
+  class="panel text-container"
+  :style="readerStyle"
+  @mouseup="handleSelection"
+  @touchend="handleSelection(true)"
+>
+
       <div class="label" style="margin-bottom:8px;">本文（ドラッグ選択で解説）</div>
 
       <div class="reader" :class="wrapModeClass">
@@ -165,6 +167,32 @@ const rawText = ref('') // 表示用（表示するボタンで反映）
 const fontSize = ref(18)
 const lineHeight = ref(1.9)
 const contentWidth = ref(760)
+const maxContentWidth = computed(() => Math.min(920, Math.max(320, viewportW.value - 80)))
+
+
+// ===== レスポンシブ：スマホでは本文幅を画面に合わせる =====
+const viewportW = ref(window.innerWidth)
+
+function onResize() {
+  viewportW.value = window.innerWidth
+  clampContentWidth()
+}
+
+function clampContentWidth() {
+  // パネル内の左右paddingぶんをざっくり引いて安全に
+  const max = Math.min(920, Math.max(320, viewportW.value - 80))
+  if (contentWidth.value > max) contentWidth.value = max
+}
+
+onMounted(() => {
+  window.addEventListener("resize", onResize, { passive: true })
+  clampContentWidth()
+})
+
+/* すでに onMounted を使ってるので、既存の onMounted に統合してOK
+   例：restore() の後に clampContentWidth() を呼ぶ
+*/
+
 
 /* テーマ */
 const theme = ref('light') // 'light' | 'dark'
@@ -246,19 +274,30 @@ function reExplain() {
 }
 
 /* ===== 選択 → 解説（入口） ===== */
-async function handleSelection() {
-  const sel = window.getSelection()?.toString()?.trim() || ''
-  if (!sel) return
+async function handleSelection(fromTouch = false) {
+  const run = async () => {
+    const sel = window.getSelection()?.toString()?.trim() || ''
+    if (!sel) return
 
-  selectionError.value = ''
-  if (sel.length > MAX_TEXT_LENGTH) {
-    selectionError.value = `選択できる文字数は${MAX_TEXT_LENGTH}文字までです（現在 ${sel.length} 文字）`
+    selectionError.value = ''
+    if (sel.length > MAX_TEXT_LENGTH) {
+      selectionError.value = `選択できる文字数は${MAX_TEXT_LENGTH}文字までです（現在 ${sel.length} 文字）`
+      return
+    }
+
+    selectedWord.value = sel
+    await explainAuto(sel, explainEngine.value)
+  }
+
+  // スマホは selection の確定が遅れることがあるので1拍置く
+  if (fromTouch) {
+    setTimeout(() => { run() }, 0)
     return
   }
 
-  selectedWord.value = sel
-  await explainAuto(sel, explainEngine.value)
+  await run()
 }
+
 
 /* ===== 自動フォールバックルータ ===== */
 async function explainAuto(term, preferred) {
@@ -725,4 +764,57 @@ function flashSavedHint(msg) {
 
 /* 下固定ぶんの余白 */
 .definition-spacer{ height: 110px; }
+
+/* =========================
+   Mobile tweaks (InteractiveText)
+   ========================= */
+@media (max-width: 640px){
+  .layout{
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .panel{
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .manual-input{
+    min-height: 140px;
+  }
+
+  /* スライダー行を縦積みにして詰まり防止 */
+  .row{
+    grid-template-columns: 1fr;
+  }
+  .row-val{
+    text-align: left;
+  }
+
+  /* 下固定（解説＋広告）がスマホで詰まらないように */
+  .def-controls{
+    gap: 8px;
+  }
+
+  /* 下固定ぶんの余白（スマホは少し大きめ） */
+  .definition-spacer{
+    height: 190px;
+  }
+}
+@media (max-width: 640px){
+  /* 設定行を縦積みにして横はみ出し防止 */
+  .row{
+    grid-template-columns: 1fr;
+  }
+  .row-val{
+    text-align: left;
+  }
+
+  /* 念のため：全体がはみ出さないように */
+  .layout, .panel, .manual-input, .reader{
+    max-width: 100%;
+  }
+}
+
+
 </style>
