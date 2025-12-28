@@ -33,6 +33,33 @@
   --mark: #fff3a3;            /* やさしい黄色 */
 }
 
+/* =========================
+   Global Dark Theme
+   body に theme-dark を付けたら全体が切り替わる
+   ========================= */
+body.theme-dark{
+  --bg: #0b1220;
+  --bg-2: #0f1b2d;
+
+  --ink: #e5e7eb;
+  --ink-muted: #9ca3af;
+
+  --border: #23324b;
+  --border-2: #2b3c59;
+  --shadow: rgba(0,0,0,0.35);
+
+  --accent: #7dd3fc;
+  --accent-bg: #13233a;
+
+  --mark: rgba(255, 243, 163, 0.45);
+}
+
+/* ダーク時の細部 */
+body.theme-dark .site-description{ color: var(--ink-muted); }
+body.theme-dark .shell{ box-shadow: 0 12px 30px rgba(0,0,0,0.35); }
+body.theme-dark a{ color: var(--accent); }
+
+
 /* ---- Base ---- */
 *{ box-sizing:border-box }
 html, body, #app { height:100% }

@@ -198,6 +198,11 @@ onMounted(() => {
 const theme = ref('light') // 'light' | 'dark'
 const themeClass = computed(() => (theme.value === 'dark' ? 'theme-dark' : 'theme-light'))
 
+function applyBodyTheme() {
+  document.body.classList.toggle("theme-dark", theme.value === "dark")
+}
+
+
 /* 表示モード：'keep' は改行維持、'wrap' は横幅回り込み */
 const wrapMode = ref('wrap')
 const wrapModeClass = computed(() =>
@@ -522,10 +527,12 @@ function restore() {
 /* 設定が変わったら自動保存 */
 watch([fontSize, lineHeight, contentWidth, theme, wrapMode, explainEngine], () => {
   persist()
+  applyBodyTheme()
 })
 
 onMounted(() => {
   restore()
+  applyBodyTheme()
 })
 
 function flashSavedHint(msg) {
