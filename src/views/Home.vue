@@ -9,7 +9,7 @@
     <p class="site-description">
   ドキュメントを開いて、気になる言葉を選択するだけ。知識がその場で広がる、あなた専用の知識ビューア。
 </p>
-<section class="shell" style="margin-top: 28px;">
+<section style="margin-top: 28px;">
   <h2>このサイトでできること</h2>
 
   <ul>
