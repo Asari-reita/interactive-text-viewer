@@ -2,10 +2,10 @@
   <!-- ルーティング先のページを表示 -->
   <RouterView />
 
-  <!-- 全ページ共通：フッター直前広告 -->
+  <!-- 全ページ共通：フッター直前広告 
   <div class="global-ad">
     <span class="ad-label">Advertisement</span>
-  </div>
+  </div> -->
 
   <!-- 規約・プライバシー・お問い合わせリンク用フッター -->
   <AppFooter />
