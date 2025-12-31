@@ -119,9 +119,9 @@
         ChatGPT
       </label>
 
-      <button class="action-btn" @click="reExplain" :disabled="!selectedWord">
-        再解説
-      </button>
+      <button class="action-btn" @click="reExplain" :disabled="!selectedWord || isLoading">
+  {{ isLoading ? '読み込み中…' : '再解説' }}
+</button>
       <button class="action-btn action-btn--ghost" @click="closeExplain">
         閉じる
       </button>
@@ -132,10 +132,27 @@
     </div>
   </div>
 
-  <!-- 広告（解説バナーの直下） -->
+<section class="shell" style="margin-top: 28px;">
+  <h2>このサイトでできること</h2>
+
+  <ul>
+    <li>文章中の気になる言葉をドラッグするだけで意味を確認できます</li>
+    <li>Wikipedia・辞書・AIを組み合わせて多角的に理解できます</li>
+    <li>論文・レポート・記事の読解をサポートする学習支援ツールです</li>
+  </ul>
+
+  <p style="margin-top: 14px;">
+    本サービスは学習・理解の補助を目的としており、表示される解説の正確性や完全性を保証するものではありません。
+  </p>
+  <p style="font-size: 0.9rem; color: var(--ink-muted);">
+  本サイトはAIおよび外部情報源を利用して解説を提供しています。
+</p>
+</section>
+
+  <!-- 広告（解説バナーの直下） 
   <div class="context-ad">
     <span class="ad-label">Advertisement</span>
-  </div>
+  </div> -->
 </div>
 
 <!-- fixed stack の分だけ下に余白 -->
@@ -229,6 +246,14 @@ const truncatedDefinition = computed(() =>
     : definition.value
 )
 
+/* リクエスト状態 */
+const isLoading = ref(false)
+const lastRequestAt = ref(0)
+const lastTerm = ref('')
+const COOLDOWN_MS = 2000
+const SAME_TERM_GUARD_MS = 1500
+
+
 /* 横幅いっぱいに回り込み表示用：空行2つ以上で段落分割、単一改行はスペース扱いにする */
 const wrapParagraphs = computed(() => {
   const t = (rawText.value || '').replace(/\r\n/g, '\n').trim()
@@ -275,8 +300,10 @@ function closeExplain() {
 
 function reExplain() {
   if (!selectedWord.value) return
-  explainAuto(selectedWord.value, explainEngine.value)
+  if (isLoading.value) return
+  explainAuto(selectedWord.value, explainEngine.value, { force: true })
 }
+
 
 /* ===== 選択 → 解説（入口） ===== */
 async function handleSelection(fromTouch = false) {
@@ -289,6 +316,25 @@ async function handleSelection(fromTouch = false) {
       selectionError.value = `選択できる文字数は${MAX_TEXT_LENGTH}文字までです（現在 ${sel.length} 文字）`
       return
     }
+        // ===== 連打・同一語ガード（ここから） =====
+    const now = Date.now()
+
+    // 連打クールダウン
+    if (now - lastRequestAt.value < COOLDOWN_MS) {
+      selectionError.value = '少し待ってからもう一度お試しください。'
+      return
+    }
+
+    // 同じ語の連続抑制（誤タップ防止）
+    if (sel === lastTerm.value && now - lastRequestAt.value < SAME_TERM_GUARD_MS) {
+      return
+    }
+
+    // ガード通過 → 記録
+    lastRequestAt.value = now
+    lastTerm.value = sel
+    // ===== 連打・同一語ガード（ここまで） =====
+
 
     selectedWord.value = sel
     await explainAuto(sel, explainEngine.value)
@@ -305,7 +351,11 @@ async function handleSelection(fromTouch = false) {
 
 
 /* ===== 自動フォールバックルータ ===== */
-async function explainAuto(term, preferred) {
+async function explainAuto(term, preferred, opts = {}) {
+  if (isLoading.value) return
+
+  isLoading.value = true
+  selectionError.value = ''
   definition.value = '読み込み中…'
   resultSource.value = ''
   resultLink.value = ''
@@ -363,17 +413,23 @@ async function explainAuto(term, preferred) {
     persist()
   } catch (e) {
     console.error(e)
-    definition.value = 'エラーが発生しました。'
+    if (e?.name === 'AbortError') {
+      definition.value = '通信がタイムアウトしました。電波状況を確認してもう一度お試しください。'
+    } else {
+      definition.value = 'エラーが発生しました。もう一度お試しください。'
+    }
     resultSource.value = ''
     resultLink.value = ''
     persist()
+  } finally {
+    isLoading.value = false
   }
 }
 
 /* ===== Wikipedia ===== */
 async function explainWithWikipedia(term) {
   const url = `https://ja.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(term)}`
-  const res = await fetch(url)
+  const res = await fetchWithTimeout(url, {}, 8000)
   if (!res.ok) return null
 
   const data = await res.json()
@@ -400,7 +456,7 @@ async function explainWithFreeDictionary(term) {
   if (!looksEnglish(term)) return null
 
   const url = `https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(term)}`
-  const res = await fetch(url)
+ const res = await fetchWithTimeout(url, {}, 8000)
   if (!res.ok) return null
 
   const data = await res.json()
@@ -458,26 +514,29 @@ async function explainWithChatGPT(term) {
     'あなたは用語の意味をわかりやすく日本語で簡潔に説明するアシスタントです。専門的すぎる言い回しを避け、最長200文字程度で要点をまとめてください。また、ですます調でなく、である調で説明してください。'
   const user = `用語: 「${term}」とは何か、論文を読む人向けに簡潔に説明してください。`
 
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: sys },
-        { role: 'user', content: user },
-      ],
-      temperature: 0.2,
-    }),
-  })
+  const res = await fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${apiKey}`,
+  },
+  body: JSON.stringify({
+    model: 'gpt-4o-mini',
+    messages: [
+      { role: 'system', content: sys },
+      { role: 'user', content: user },
+    ],
+    temperature: 0.2,
+  }),
+}, 15000)
 
-  if (!res.ok) return 'ChatGPT呼び出しでエラーが発生しました。'
-  const json = await res.json()
-  return json?.choices?.[0]?.message?.content?.trim() || ''
+if (!res.ok) {
+  if (res.status === 401) return 'OpenAI APIキーが無効です（401）。'
+  if (res.status === 429) return '混雑しています（429）。少し待ってから再試行してください。'
+  if (res.status >= 500) return 'OpenAI側で一時的な障害が発生しています。少し待ってから再試行してください。'
+  return `ChatGPT呼び出しでエラーが発生しました（${res.status}）。`
 }
+
 
 /* ===== ローカル保存 ===== */
 const LS_KEY = 'mvp_reader_state_v2'
@@ -539,6 +598,20 @@ function flashSavedHint(msg) {
   savedHint.value = msg
   setTimeout(() => (savedHint.value = ''), 1200)
 }
+
+//　タイムアウト
+async function fetchWithTimeout(url, options = {}, timeoutMs = 10000) {
+  const controller = new AbortController()
+  const id = setTimeout(() => controller.abort(), timeoutMs)
+
+  try {
+    const res = await fetch(url, { ...options, signal: controller.signal })
+    return res
+  } finally {
+    clearTimeout(id)
+  }
+}
+
 </script>
 
 <style scoped>
