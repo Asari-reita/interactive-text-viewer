@@ -9,8 +9,8 @@
     <p class="site-description">
   ドキュメントを開いて、気になる言葉を選択するだけ。知識がその場で広がる、あなた専用の知識ビューア。
 </p>
-<section style="margin-top: 28px;">
-  <h2>このサイトでできること {{ Date.now() }}</h2>
+
+ <h2>このサイトでできること </h2>
 
   <ul>
     <li>文章中の気になる言葉をドラッグするだけで意味を確認できます</li>
@@ -24,7 +24,8 @@
   <p style="font-size: 0.9rem; color: var(--ink-muted);">
   本サイトはAIおよび外部情報源を利用して解説を提供しています。
 </p>
-</section>
+
+
 
     <!-- 大きな濃紺カード（中にUIを配置） -->
     <section class="shell">
