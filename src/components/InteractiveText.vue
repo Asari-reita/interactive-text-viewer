@@ -514,27 +514,35 @@ async function explainWithChatGPT(term) {
     'あなたは用語の意味をわかりやすく日本語で簡潔に説明するアシスタントです。専門的すぎる言い回しを避け、最長200文字程度で要点をまとめてください。また、ですます調でなく、である調で説明してください。'
   const user = `用語: 「${term}」とは何か、論文を読む人向けに簡潔に説明してください。`
 
-  const res = await fetchWithTimeout('https://api.openai.com/v1/chat/completions', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${apiKey}`,
-  },
-  body: JSON.stringify({
-    model: 'gpt-4o-mini',
-    messages: [
-      { role: 'system', content: sys },
-      { role: 'user', content: user },
-    ],
-    temperature: 0.2,
-  }),
-}, 15000)
+  const res = await fetchWithTimeout(
+    'https://api.openai.com/v1/chat/completions',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: sys },
+          { role: 'user', content: user },
+        ],
+        temperature: 0.2,
+      }),
+    },
+    15000
+  )
 
-if (!res.ok) {
-  if (res.status === 401) return 'OpenAI APIキーが無効です（401）。'
-  if (res.status === 429) return '混雑しています（429）。少し待ってから再試行してください。'
-  if (res.status >= 500) return 'OpenAI側で一時的な障害が発生しています。少し待ってから再試行してください。'
-  return `ChatGPT呼び出しでエラーが発生しました（${res.status}）。`
+  if (!res.ok) {
+    if (res.status === 401) return 'OpenAI APIキーが無効です（401）。'
+    if (res.status === 429) return '混雑しています（429）。少し待ってから再試行してください。'
+    if (res.status >= 500) return 'OpenAI側で一時的な障害が発生しています。少し待ってから再試行してください。'
+    return `ChatGPT呼び出しでエラーが発生しました（${res.status}）。`
+  }
+
+  const json = await res.json()
+  return json?.choices?.[0]?.message?.content?.trim() || ''
 }
 
 
